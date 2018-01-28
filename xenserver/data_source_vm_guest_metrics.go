@@ -95,7 +95,7 @@ func dataSourceVmGuestMetricsRead(d *schema.ResourceData, meta interface{}) (err
 		return
 	}
 
-	var metrics VMGuestMetrics
+	var metrics *VMGuestMetrics
 
 	if metrics, err = vm.GuestMetrics(c); err != nil {
 		return

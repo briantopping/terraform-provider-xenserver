@@ -248,26 +248,26 @@ func (this *VMDescriptor) Load(c *Connection) error {
 	return this.Query(c)
 }
 
-func (this *VMDescriptor) GuestMetrics(c *Connection) (metrics VMGuestMetrics, err error) {
+func (this *VMDescriptor) GuestMetrics(c *Connection) (metrics *VMGuestMetrics, err error) {
 	var metricsRef xenAPI.VMGuestMetricsRef
 	var metricsRecord xenAPI.VMGuestMetricsRecord
 	if metricsRef, err = c.client.VM.GetGuestMetrics(c.session, this.VMRef); err != nil {
-		return
+		return nil, err
 	}
 
 	if metricsRecord, err = c.client.VMGuestMetrics.GetRecord(c.session, metricsRef); err == nil {
-		metrics.UUID = metricsRecord.UUID
-		metrics.Disks = metricsRecord.Disks
-		metrics.Memory = metricsRecord.Memory
-		metrics.OSVersion = metricsRecord.OSVersion
-		metrics.PVDriversVersion = metricsRecord.PVDriversVersion
-		metrics.PVDriversDetected = metricsRecord.PVDriversDetected
-		metrics.PVDriversUpToDate = metricsRecord.PVDriversUpToDate
-		metrics.CanUseHotplugVbd = string(metricsRecord.CanUseHotplugVbd)
-		metrics.CanUseHotplugVif = string(metricsRecord.CanUseHotplugVif)
-		metrics.Live = metricsRecord.Live
-		metrics.LastUpdated = metricsRecord.LastUpdated
-
+		metrics = &VMGuestMetrics{
+			UUID: metricsRecord.UUID,
+			Disks: metricsRecord.Disks,
+			Memory: metricsRecord.Memory,
+			OSVersion: metricsRecord.OSVersion,
+			PVDriversVersion: metricsRecord.PVDriversVersion,
+			PVDriversDetected: metricsRecord.PVDriversDetected,
+			PVDriversUpToDate: metricsRecord.PVDriversUpToDate,
+			CanUseHotplugVbd: string(metricsRecord.CanUseHotplugVbd),
+			CanUseHotplugVif: string(metricsRecord.CanUseHotplugVif),
+			Live: metricsRecord.Live,
+			LastUpdated: metricsRecord.LastUpdated}
 		var keys []string
 		for k := range metricsRecord.Networks {
 			keys = append(keys, k)
@@ -276,7 +276,7 @@ func (this *VMDescriptor) GuestMetrics(c *Connection) (metrics VMGuestMetrics, e
 
 		var re *regexp.Regexp
 		if re, err = regexp.Compile("([0-9]+)/(ipv?6?)/?[0-9]*"); err != nil {
-			return
+			return nil, err
 		}
 
 		if len(keys) > 0 {
@@ -285,7 +285,7 @@ func (this *VMDescriptor) GuestMetrics(c *Connection) (metrics VMGuestMetrics, e
 			var count int
 
 			if count, err = strconv.Atoi(re.FindStringSubmatch(lastKey)[1]); err != nil {
-				return
+				return nil, err
 			}
 			count += 1 // increase by 1 since we obtained index and not length
 
@@ -295,7 +295,7 @@ func (this *VMDescriptor) GuestMetrics(c *Connection) (metrics VMGuestMetrics, e
 				matches := re.FindStringSubmatch(k)
 				var index int
 				if index, err = strconv.Atoi(matches[1]); err != nil {
-					return
+					return nil, err
 				}
 
 				if metrics.Networks[index] == nil {
@@ -307,7 +307,7 @@ func (this *VMDescriptor) GuestMetrics(c *Connection) (metrics VMGuestMetrics, e
 		}
 	}
 
-	return
+	return metrics, nil
 }
 
 func (this *VMDescriptor) Metrics(c *Connection) (metrics *VMMetrics, err error) {
