@@ -42,7 +42,7 @@ func dataSourceVmNetworks() *schema.Resource {
 				},
 			},
 			vmNetworksStartupDelay: &schema.Schema{
-				Type:     schema.TypeFloat,
+				Type:     schema.TypeInt,
 				Optional: true,
 				Default:  0,
 			},
@@ -57,28 +57,31 @@ func dataSourceVmNetworksRead(d *schema.ResourceData, meta interface{}) (err err
 		UUID: d.Get(vmNetworksVmUUID).(string),
 	}
 	if err = vm.Load(c); err != nil {
-		return
+		return err
 	}
 
-	if delay, ok := d.Get(vmNetworksStartupDelay).(float64); ok && delay > 0 {
-		var vmmetrics VMMetrics
-		if vmmetrics, err = vm.Metrics(c); err != nil {
-			return
-		}
-
-		now := time.Now()
-		diff := now.Sub(vmmetrics.StartTime).Seconds()
-
-		if delay > diff {
-			sleep := time.Duration(delay-diff) * time.Second
-			time.Sleep(sleep)
-		}
+	if delay, ok := d.GetOk(vmNetworksStartupDelay); ok {
+		delay := time.Duration(delay.(int)) * time.Second
+		log.Printf("[DEBUG] Delaying %s\n", delay.String())
+		//var vmmetrics *VMMetrics
+		//if vmmetrics, err = vm.Metrics(c); err != nil {
+		//	return err
+		//}
+		//
+		//log.Printf("[DEBUG] Start time was %s\n", vmmetrics.StartTime.String())
+		//now := time.Now()
+		//diff := now.Sub(vmmetrics.StartTime)
+		//
+		//log.Printf("[DEBUG] Difference is %s\n", (delay - diff).String())
+		//if delay > diff {
+			time.Sleep(delay)
+		//}
 	}
 
 	var metrics VMGuestMetrics
 
 	if metrics, err = vm.GuestMetrics(c); err != nil {
-		return
+		return err
 	}
 
 	d.SetId(metrics.UUID)

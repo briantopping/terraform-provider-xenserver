@@ -310,24 +310,24 @@ func (this *VMDescriptor) GuestMetrics(c *Connection) (metrics VMGuestMetrics, e
 	return
 }
 
-func (this *VMDescriptor) Metrics(c *Connection) (metrics VMMetrics, err error) {
+func (this *VMDescriptor) Metrics(c *Connection) (metrics *VMMetrics, err error) {
 	var metricsRecord xenAPI.VMMetricsRecord
 	var metricsRef xenAPI.VMMetricsRef
 	if metricsRef, err = c.client.VM.GetMetrics(c.session, this.VMRef); err != nil {
-		return
+		return nil, err
 	}
 
 	if metricsRecord, err = c.client.VMMetrics.GetRecord(c.session, metricsRef); err != nil {
-		return
+		return nil, err
 	}
 
-	metrics = VMMetrics{
+	metrics = &VMMetrics{
 		UUID:        metricsRecord.UUID,
 		StartTime:   metricsRecord.StartTime,
 		InstallTime: metricsRecord.LastUpdated,
 	}
 
-	return
+	return metrics, nil
 }
 
 func (this *VMDescriptor) Query(c *Connection) error {
